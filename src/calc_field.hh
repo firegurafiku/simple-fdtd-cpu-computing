@@ -1,3 +1,4 @@
+#include "Config.hh"
 #include "rvlm/core/SolidArray3d.hh"
 #include "yee_grid.hh"
 
@@ -51,7 +52,7 @@ void calcCoefs(YeeGrid<valueType>& grid) {
     calcD(grid.D_Ez, grid.delta_t, grid.epsilon_Ez, grid.sigma_Ez);
 }
 
-template <typename valueType>
+template <bool useKahan, typename valueType>
 void calcH(YeeGrid<valueType>& grid) {
 
     int nx = grid.Hx.getCountX();
@@ -72,8 +73,24 @@ void calcH(YeeGrid<valueType>& grid) {
         valueType  curEy1     = grid.Ey          .at(ix,   iy,   iz+1);
         valueType  curEy0     = grid.Ey          .at(ix,   iy,   iz);
 
-        curHx -= curD_Hx * ((curEz1 - curEz0) / delta_y -
-                            (curEy1 - curEy0) / delta_z);
+        if constexpr (!useKahan) {
+        curHx += curD_Hx * (
+                    (curEy1 - curEy0) / delta_z -
+                    (curEz1 - curEz0) / delta_y
+                 );
+        } else {
+            valueType x = curD_Hx * (
+                    (curEy1 - curEy0) / delta_z -
+                    (curEz1 - curEz0) / delta_y
+                 );
+
+            valueType& sum = curHx;
+            valueType& c = grid.c_Hx.at(ix, iy, iz);
+            valueType y = x - c;
+            valueType volatile t = sum + y;
+            c = (t - sum) - y;
+            sum = t;
+        }
     }
 
     for(int ix = 0; ix < nx-1; ix++)
@@ -86,8 +103,25 @@ void calcH(YeeGrid<valueType>& grid) {
         valueType  curEz1     = grid.Ez          .at(ix+1, iy,   iz);
         valueType  curEz0     = grid.Ez          .at(ix,   iy,   iz);
 
-        curHy -= curD_Hy * ((curEx1 - curEx0) / delta_z -
-                            (curEz1 - curEz0) / delta_x);
+        if constexpr (!useKahan) {
+        curHy += curD_Hy * (
+                    (curEz1 - curEz0) / delta_x -
+                    (curEx1 - curEx0) / delta_z
+                  );
+        } else {
+            valueType x = curD_Hy * (
+                    (curEz1 - curEz0) / delta_x -
+                    (curEx1 - curEx0) / delta_z
+                  );
+
+
+            valueType& sum = curHy;
+            valueType& c = grid.c_Hy.at(ix, iy, iz);
+            valueType y = x - c;
+            valueType volatile t = sum + y;
+            c = (t - sum) - y;
+            sum = t;
+        }
     }
 
     for(int ix = 0; ix < nx-1; ix++)
@@ -100,8 +134,24 @@ void calcH(YeeGrid<valueType>& grid) {
         valueType  curEx1     = grid.Ex          .at(ix,   iy+1, iz);
         valueType  curEx0     = grid.Ex          .at(ix,   iy,   iz);
 
-        curHz -= curD_Hz * ((curEy1 - curEy0) / delta_x -
-                            (curEx1 - curEx0) / delta_y);
+        if constexpr (!useKahan) {
+        curHz += curD_Hz * (
+                            (curEx1 - curEx0) / delta_y -
+                            (curEy1 - curEy0) / delta_x
+                    );
+        } else {
+            valueType x = curD_Hz * (
+                            (curEx1 - curEx0) / delta_y -
+                            (curEy1 - curEy0) / delta_x
+                    );
+
+            valueType& sum = curHz;
+            valueType& c = grid.c_Hz.at(ix, iy, iz);
+            valueType y = x - c;
+            valueType volatile t = sum + y;
+            c = (t - sum) - y;
+            sum = t;
+        }
     }
 }
 

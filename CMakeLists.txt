@@ -5,6 +5,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 add_subdirectory(rvlm-common)
 
 add_executable(fdtd
+    src/Config.hh
    src/calc_field.hh
    src/resistive_source.hh
    src/yee_grid.hh

@@ -1,4 +1,5 @@
 #pragma once
+#include "Config.hh"
 #include "rvlm/core/Constants.hh"
 #include "rvlm/core/SolidArray3d.hh"
 
@@ -21,6 +22,12 @@ public:
         , Hx         (nx, ny, nz,   0)
         , Hy         (nx, ny, nz,   0)
         , Hz         (nx, ny, nz,   0)
+    #ifdef UseKahan
+        , c_Hx         (nx, ny, nz,   0)
+        , c_Hy         (nx, ny, nz,   0)
+        , c_Hz         (nx, ny, nz,   0)
+
+    #endif
         , Ex         (nx, ny, nz,   0)
         , Ey         (nx, ny, nz,   0)
         , Ez         (nx, ny, nz,   0)
@@ -56,6 +63,10 @@ public:
     ArrayType Hx;
     ArrayType Hy;
     ArrayType Hz;
+#ifdef UseKahan
+    ArrayType c_Hx, c_Hy, c_Hz;
+#endif
+
     ArrayType Ex;
     ArrayType Ey;
     ArrayType Ez;
